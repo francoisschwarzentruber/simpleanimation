@@ -73,6 +73,28 @@ function htmlElement(content) {
     return element;
 }
 
+
+
+
+
+function latex(latexCode, { x, y }) {
+    const wrapper = document.createElement("div");
+    wrapper.innerHTML = `<div style="left:${x}px; top:${y}px">\\[${latexCode}\\]</div>`;
+    const element = wrapper.firstChild;
+    exec(() => {
+        container.append(element);
+        MathJax.typeset();
+    });
+    return element;
+}
+
+
+
+function del(obj) {
+    exec(() => {
+        obj.remove();
+    });
+}
 function rect({ x, y, w, h, fillcolor = "red", border = "black" }) {
     const content = `<div style="position:absolute; left: ${x}; top: ${y};  width:${w}; height: ${h}; background: ${fillcolor}; border: ${border}"></div>`;
     return htmlElement(content);
@@ -88,7 +110,7 @@ function svgElement(content) {
     return element;
 }
 
-function line({ x1, y1, x2, y2, stroke = "black" , strokeDasharray = ""}) {
+function line({ x1, y1, x2, y2, stroke = "black", strokeDasharray = "" }) {
     var newLine = document.createElementNS('http://www.w3.org/2000/svg', 'line');
     newLine.setAttribute('id', 'line2');
     newLine.setAttribute('x1', x1);
@@ -97,7 +119,7 @@ function line({ x1, y1, x2, y2, stroke = "black" , strokeDasharray = ""}) {
     newLine.setAttribute('y2', y2);
     newLine.setAttribute("stroke", stroke);
     newLine.setAttribute("stroke-dasharray", strokeDasharray);
-    
+
     exec(() => {
         svg.append(newLine);
     });
@@ -123,6 +145,11 @@ function mv(obj, info) {
             obj.style.left = info.x + "px";
         if (info.y)
             obj.style.top = info.y + "px";
+        if (info.dx)
+            obj.style.left = (parseInt(obj.style.left) + info.dx) + "px";
+        if (info.dy)
+            obj.style.top = (parseInt(obj.style.top) + info.dy) + "px";
+
         if (info.w)
             obj.style.width = info.w + "px";
         if (info.h)
