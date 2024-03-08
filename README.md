@@ -17,6 +17,7 @@ https://fr.wikipedia.org/wiki/M%C3%A9thode_des_alias#/media/Fichier:Alias-method
 - `line({x1:2, y1: 3, x2:19, y2: 12})` creates a line
 - `mv(obj, {x: 5, duration: 500})` moves the object `obj` by modifying `x` coordinate during 500ms
 - `exec(() => ...)` executes the function given by its lambda expression
+- `del(obj)` deletes the object `obj`
 
 
 ## Roadmap
