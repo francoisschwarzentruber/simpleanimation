@@ -4,7 +4,10 @@ A simple language for creating small animations with tiny functions in JS.
 
 ## Examples
 
-https://fr.wikipedia.org/wiki/M%C3%A9thode_des_alias#/media/Fichier:Alias-method-table-generation.gif
+<img src="https://upload.wikimedia.org/wikipedia/commons/d/d7/Alias-method-table-generation.gif"></img>
+<img src="https://upload.wikimedia.org/wikipedia/commons/2/21/Telescopingseries.gif"></img>
+- https://fr.wikipedia.org/wiki/M%C3%A9thode_des_alias#/media/Fichier:Alias-method-table-generation.gif
+- https://fr.wikipedia.org/wiki/Somme_t%C3%A9lescopique#/media/Fichier:Telescopingseries.gif
 
 
 
