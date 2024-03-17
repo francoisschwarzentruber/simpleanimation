@@ -2,7 +2,7 @@ cls()
 
 let p = [];
 let m = [];
-const sep = 90
+const sep = 90;
 
 for (let i = 0; i <= 4; i++) {
     p[5 - i] = latex(i == 0 ? "\\phantom{+}a_5" : `~+ a_${5 - i}`, { x: i == 0 ? 110 : (100 + i * sep), y: 100 });
