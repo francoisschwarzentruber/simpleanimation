@@ -11,12 +11,18 @@ That's all folks!
 
 ## Examples
 
-<img src="https://upload.wikimedia.org/wikipedia/commons/d/d7/Alias-method-table-generation.gif"></img>
+29 lines of code produce:
 <img src="https://upload.wikimedia.org/wikipedia/commons/2/21/Telescopingseries.gif"></img>
+
+58 lines of code produce:
+<img src="https://upload.wikimedia.org/wikipedia/commons/d/d7/Alias-method-table-generation.gif"></img>
+
+This tool has been used to add animations to Wikipedia:
+
 - https://fr.wikipedia.org/wiki/M%C3%A9thode_des_alias#/media/Fichier:Alias-method-table-generation.gif
 - https://fr.wikipedia.org/wiki/Somme_t%C3%A9lescopique#/media/Fichier:Telescopingseries.gif
 
-The examples of code to copy/paste in the tool for obtaining these animations are in the folder `examples`.
+The examples are available in the folder  `examples`. Just copy/paste them in the tool for obtaining these animations are in the folder
 
 
 ## Functions 
