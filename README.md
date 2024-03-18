@@ -17,6 +17,9 @@ That's all folks!
 58 lines of code produce:
 <img src="https://upload.wikimedia.org/wikipedia/commons/d/d7/Alias-method-table-generation.gif"></img>
 
+56 lines of code produce:
+![CI90](https://github.com/francoisschwarzentruber/simpleanimation/assets/43071857/51b3d3ee-699e-4f86-a4cd-24a71fe8a47b)
+
 This tool has been used to add animations to Wikipedia:
 
 - https://fr.wikipedia.org/wiki/M%C3%A9thode_des_alias#/media/Fichier:Alias-method-table-generation.gif
@@ -52,5 +55,6 @@ The examples are available in the folder  `examples`. Just copy/paste them in th
 ## Roadmap
 - handle more properties
 - drawing for specifying new objects or moving objects
+- go to a specific point in the animation by moving in the code
 - export in GIF (but not sure because Peek works)
 - export in MP4 (but not sure because Peek works)
