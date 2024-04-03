@@ -112,15 +112,58 @@ function rect({ x, y, w, h, fillcolor = "red", border = "black" }) {
     return htmlElement(content);
 }
 
+function circle(info) {
+    var newCircle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+
+    if (info.stroke == undefined)
+        info.stroke = "black";
+
+
+    _set(newCircle, info);
+
+    exec(() => {
+        _svgAppend(newCircle);
+    });
+    return newCircle;
+}
+
 function svgElement(content) {
     const wrapper = document.createElement('svg');
     wrapper.innerHTML = content;
     const element = wrapper.firstChild;
     exec(() => {
-        svg.append(element);
+        _svgAppend(element);
     });
     return element;
 }
+
+
+function _svgAppend(obj) {
+    if (obj.style.zIndex == "") {
+        svg.appendChild(obj);
+        return;
+    }
+
+    const z = parseInt(obj.style.zIndex);
+
+    if (z <= 0)
+        svg.prepend(obj);
+    else
+        svg.appendChild(obj);
+    return;
+    for (const o of svg.children) {
+        if (z <= parseInt(o.style.zIndex)) {
+            console.log(z)
+            console.log(parseInt(o.style.zIndex))
+            svg.insertBefore(obj, o);
+            return;
+        }
+    }
+
+    svg.appendChild(obj);
+
+}
+
 
 function line(info) {
     var newLine = document.createElementNS('http://www.w3.org/2000/svg', 'line');
@@ -128,11 +171,10 @@ function line(info) {
     if (info.stroke == undefined)
         info.stroke = "black";
 
-
     _set(newLine, info);
 
     exec(() => {
-        svg.append(newLine);
+        _svgAppend(newLine);
     });
     return newLine;
 
@@ -190,7 +232,8 @@ function _set(obj, info) {
         obj.setAttribute('rx', info.ry);
     if (info.r)
         obj.setAttribute('r', info.r);
-
+    if (info.fill)
+        obj.setAttribute('fill', info.fill);
     obj.setAttribute("stroke", info.stroke || info.color);
     obj.setAttribute("stroke-width", info.linewidth);
     obj.setAttribute("stroke-dasharray", info.strokeDasharray);
@@ -209,7 +252,9 @@ function mv(obj, info) {
 }
 
 
-function wait(duration) { t += duration; }
+function wait(duration) {
+    t += duration;
+}
 
 document.getElementById("run").onclick = () => {
     if (animation.stopped) {
