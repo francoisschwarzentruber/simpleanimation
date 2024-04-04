@@ -1,19 +1,54 @@
 const editor = ace.edit("editor");
 editor.setTheme("ace/theme/monokai");
 editor.session.setMode("ace/mode/javascript");
+editor.getSession().on('change', function () {
+    localStorage.setItem("code", editor.getValue());
+});
+
+
+editor.setValue(localStorage.getItem("code"));
+
+inputStep.oninput = () => { animation.stop(); load(); animation.gotoTime(inputStep.value) };
 
 class Animation {
     stopped = true;
     actions = [];
+    t = 0;
+    i = 0;
 
     addAction(startTime, endTime, f) {
         this.actions.push({ startTime, endTime, f });
     }
 
+
+    gotoTime(newt) {
+        this.i = 0;
+        this.t = 0;
+        this._moveTo(newt);
+    }
+
+
+    _moveTo(newt) {
+        inputStep.value = newt;
+
+        while (this.i < animation.actions.length && animation.actions[this.i].startTime <= newt) {
+            animation.actions[this.i].f();
+            this.i++;
+        }
+
+        this.t = newt;
+
+        if (this.i >= animation.actions.length) {
+            this.stopped = true;
+            return;
+        }
+
+    }
+
+
     play() {
         this.stopped = false;
-        let beginning = Date.now();
-        let i = 0;
+        const beginning = Date.now() - this.t;
         console.log("play")
         let loop = () => {
             if (this.stopped)
@@ -21,17 +56,7 @@ class Animation {
 
             const t = Date.now() - beginning;
 
-
-            while (i < animation.actions.length && animation.actions[i].startTime <= t) {
-                animation.actions[i].f();
-                i++;
-            }
-
-            if (i >= animation.actions.length) {
-                this.stopped = true;
-                return;
-            }
-
+            this._moveTo(t);
 
             if (!this.stopped)
                 requestAnimationFrame(loop);
@@ -39,9 +64,8 @@ class Animation {
         loop();
     }
 
-    stop() {
-        this.stopped = true;
-    }
+    stop() { this.stopped = true; }
+    get duration() { return Math.max(...this.actions.map((a) => a.endTime)); }
 }
 
 
@@ -52,6 +76,7 @@ function load() {
     t = 0;
     animation = new Animation();
     eval(editor.getValue());
+    inputStep.max = animation.duration;
 }
 
 
@@ -256,10 +281,18 @@ function wait(duration) {
     t += duration;
 }
 
-document.getElementById("run").onclick = () => {
+document.getElementById("buttonPlayStop").onclick = () => {
     if (animation.stopped) {
         container.innerHTML = "";
+        let t = 0;
+        if (animation)
+            t = animation.t;
+
         load();
+
+        if (t >= animation.duration)
+            t = 0;
+        animation.gotoTime(t);
         animation.play();
     }
     else
