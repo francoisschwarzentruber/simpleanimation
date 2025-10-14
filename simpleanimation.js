@@ -73,10 +73,15 @@ class Animation {
         this.actions.push({ startTime, endTime, f });
     }
 
-
+    /**
+     * 
+     * @param {*} newt
+     * @description show the picture at time newt 
+     */
     gotoTime(newt) {
         this.i = 0;
         this.t = 0;
+        container.innerHTML = "";
         this._forwardTo(newt);
     }
 
@@ -99,6 +104,9 @@ class Animation {
     }
 
 
+    /**
+     * play the animation from the current time
+     */
     play() {
         this.stopped = false;
         const beginning = Date.now() - this.t;
@@ -117,8 +125,13 @@ class Animation {
         loop();
     }
 
+    /**
+     * @description stop the animation
+     */
     stop() { this.stopped = true; }
-    get duration() { return Math.max(...this.actions.map((a) => a.endTime)); }
+
+
+    get totalDuration() { return Math.max(...this.actions.map((a) => a.endTime)); }
 }
 
 
@@ -129,8 +142,8 @@ function load() {
     _currentTime = 0;
     animation = new Animation();
     eval(editor.getValue());
-    inputStep.max = animation.duration;
-    console.log("total duration: " + animation.duration);
+    inputStep.max = animation.totalDuration;
+    console.log("total duration: " + animation.totalDuration);
 }
 
 
@@ -160,7 +173,7 @@ function openmoji(emoticonCode, parameters) {
     return htmlElement(`<img src="https://openmoji.org/data/color/svg/${emoticonCode}.svg"/>`, parameters)
 }
 
-function latex(latexCode, { x, y }) {
+function latex(latexCode, parameters) {
     const element = document.createElement("div");
     element.innerText = "\\[${latexCode}\\]";
     _setParameters(element, parameters);
@@ -194,14 +207,10 @@ function rect(parameters) {
     return htmlElement(content, parameters);
 }
 
-function circle(info) {
+function circle(parameters) {
     var newCircle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
 
-    if (info.stroke == undefined)
-        info.stroke = "black";
-
-
-    _setParameters(newCircle, info);
+    _setParameters(newCircle, parameters);
 
     exec(() => {
         _svgAppend(newCircle);
@@ -250,9 +259,6 @@ function _svgAppend(obj) {
 function line(parameters) {
     var newLine = document.createElementNS('http://www.w3.org/2000/svg', 'line');
 
-    if (parameters.stroke == undefined)
-        parameters.stroke = "black";
-
     _setParameters(newLine, parameters);
 
     exec(() => {
@@ -264,7 +270,7 @@ function line(parameters) {
 
 
 function exec(f) {
-    if(typeof(_currentTime) != "number")
+    if (typeof (_currentTime) != "number")
         console.error("a")
     animation.addAction(_currentTime, _currentTime, f);
 }
@@ -278,9 +284,7 @@ function cls() {
 
 
 
-let defaultParameters = {};
-
-let exampleParameters = { x: 0, y: 0, w: 32, h: 32, color: "black", stroke: "black", fill: "white", fillColor: "white", duration: 200 };
+let defaultParameters = { x: 0, y: 0, w: 32, h: 32, color: "black", stroke: "black", fill: "white", fillColor: "white", duration: 200 };
 
 function sameButFirstLetterUpperCase(name) {
     return name[0].toUpperCase() + name.substring(1);
@@ -289,7 +293,7 @@ function sameButFirstLetterUpperCase(name) {
 /**
  * install the setter for the default parameters
  */
-for (let parameterName in exampleParameters) {
+for (let parameterName in defaultParameters) {
     eval(`function set${sameButFirstLetterUpperCase(parameterName)}(value) {defaultParameters.${parameterName} = value;}`)
 }
 
@@ -297,11 +301,12 @@ for (let parameterName in exampleParameters) {
 
 function _setParameters(obj, parameters) {
     if (parameters == undefined)
-        parameters = defaultParameters;
+        parameters = {};
 
-    for (const name in defaultParameters)
-        if (parameters[name] == undefined)
-            parameters[name] = defaultParameters[name];
+    if (parameters.dur == undefined)
+        for (const name in defaultParameters)
+            if (parameters[name] == undefined)
+                parameters[name] = defaultParameters[name];
 
     if (parameters.x)
         obj.style.left = parameters.x + "px";
@@ -373,7 +378,9 @@ function mv(obj, parameters) {
 }
 
 
-function wait(duration) {_currentTime +=
+function wait(duration) {
+    if (duration == undefined)
+        duration = defaultParameters.duration;
     _currentTime += duration;
 }
 
@@ -386,7 +393,7 @@ document.getElementById("buttonPlayStop").onclick = () => {
 
         load();
 
-        if (t >= animation.duration)
+        if (t >= animation.totalDuration)
             t = 0;
         animation.gotoTime(t);
         animation.play();
