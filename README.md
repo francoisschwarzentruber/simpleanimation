@@ -30,6 +30,14 @@ The examples are available in the folder  `examples`. Just copy/paste them in th
 
 ## Functions 
 
+### Assigning default values
+
+- `setColor("red")`
+- `setX(20)`;
+- `setY(10)`;
+- `setFill("blue")`;
+- `setDuration(300);`
+
 ### Creation of objects
 
 - `rect({x:2, y:3, w: 10, h: 20, color: "red"})` creates a rectangle and returns it

@@ -1,14 +1,61 @@
-const editor = ace.edit("editor");
-editor.setTheme("ace/theme/monokai");
-editor.session.setMode("ace/mode/javascript");
-editor.getSession().on('change', function () {
-    localStorage.setItem("code", editor.getValue());
-});
+/**
+ * wrapper of ACE editor
+ */
+class EditorACE {
+
+    constructor() {
+        this.editor = ace.edit("editor");
+        this.editor.setTheme("ace/theme/monokai");
+        this.editor.session.setMode("ace/mode/javascript");
+        this.editor.getSession().on('change', function () {
+            localStorage.setItem("code", this.editor.getValue());
+        });
+    }
 
 
+    setValue(txt) {
+        this.editor.setValue(txt);
+    }
+
+    getValue() {
+        return this.editor.getValue();
+    }
+}
+
+
+/**
+ * wrapper of a naïve textarea editor
+ */
+class EditorText {
+
+    constructor() {
+        this.editor = document.createElement("textarea");
+        document.getElementById("editor").append(this.editor);
+        this.editor.setAttribute("rows", "30");
+        this.editor.setAttribute("cols", "50");
+        this.editor.oninput = (
+            () => {
+                localStorage.setItem("code", this.editor.value);
+            });
+    }
+
+
+    setValue(txt) {
+        this.editor.value = (txt);
+    }
+
+    getValue() {
+        return this.editor.value;
+    }
+}
+
+
+/** logic */
+editor = new EditorText();
 editor.setValue(localStorage.getItem("code"));
-
 inputStep.oninput = () => { animation.stop(); load(); animation.gotoTime(inputStep.value) };
+
+
 
 class Animation {
     stopped = true;
@@ -16,6 +63,12 @@ class Animation {
     t = 0;
     i = 0;
 
+    /**
+     * 
+     * @param {*} startTime 
+     * @param {*} endTime 
+     * @param {*} f function to be executed as an action
+     */
     addAction(startTime, endTime, f) {
         this.actions.push({ startTime, endTime, f });
     }
@@ -24,11 +77,11 @@ class Animation {
     gotoTime(newt) {
         this.i = 0;
         this.t = 0;
-        this._moveTo(newt);
+        this._forwardTo(newt);
     }
 
 
-    _moveTo(newt) {
+    _forwardTo(newt) {
         inputStep.value = newt;
 
         while (this.i < animation.actions.length && animation.actions[this.i].startTime <= newt) {
@@ -56,7 +109,7 @@ class Animation {
 
             const t = Date.now() - beginning;
 
-            this._moveTo(t);
+            this._forwardTo(t);
 
             if (!this.stopped)
                 requestAnimationFrame(loop);
@@ -70,13 +123,14 @@ class Animation {
 
 
 let animation = new Animation();
-let t = 0;
+let _currentTime = 0;
 
 function load() {
-    t = 0;
+    _currentTime = 0;
     animation = new Animation();
     eval(editor.getValue());
     inputStep.max = animation.duration;
+    console.log("total duration: " + animation.duration);
 }
 
 
@@ -84,15 +138,15 @@ const container = document.getElementById("container");
 const svg = document.getElementById("svg");
 
 function cls() {
-    animation.addAction(t, t, () => container.innerHTML = "");
+    animation.addAction(_currentTime, _currentTime, () => container.innerHTML = "");
 }
 
-function htmlElement(content, info) {
+function htmlElement(htmlCode, parameters) {
     const wrapper = document.createElement('div');
-    wrapper.innerHTML = content;
+    wrapper.innerHTML = htmlCode;
     const element = wrapper.firstChild;
     element.style.position = "absolute";
-    _set(element, info);
+    _setParameters(element, parameters);
 
     exec(() => {
         container.append(element);
@@ -102,14 +156,15 @@ function htmlElement(content, info) {
 
 
 
-function openmoji(name, info) {
-    return htmlElement(`<img src="https://openmoji.org/data/color/svg/${name}.svg"/>`, info)
+function openmoji(emoticonCode, parameters) {
+    return htmlElement(`<img src="https://openmoji.org/data/color/svg/${emoticonCode}.svg"/>`, parameters)
 }
 
 function latex(latexCode, { x, y }) {
-    const wrapper = document.createElement("div");
-    wrapper.innerHTML = `<div style="left:${x}px; top:${y}px">\\[${latexCode}\\]</div>`;
-    const element = wrapper.firstChild;
+    const element = document.createElement("div");
+    element.innerText = "\\[${latexCode}\\]";
+    _setParameters(element, parameters);
+
     exec(() => {
         container.append(element);
         MathJax.typeset();
@@ -117,10 +172,10 @@ function latex(latexCode, { x, y }) {
     return element;
 }
 
-function text(str, { x, y }) {
-    const wrapper = document.createElement("div");
-    wrapper.innerHTML = `<div style="left:${x}px; top:${y}px">${str}</div>`;
-    const element = wrapper.firstChild;
+function text(str, parameters) {
+    const element = document.createElement("div");
+    element.innerText = str;
+    _setParameters(element, parameters);
     exec(() => {
         container.append(element);
     });
@@ -132,9 +187,11 @@ function del(obj) {
         obj.remove();
     });
 }
-function rect({ x, y, w, h, fillcolor = "red", border = "black" }) {
-    const content = `<div style="position:absolute; left: ${x}; top: ${y};  width:${w}; height: ${h}; background: ${fillcolor}; border: ${border}"></div>`;
-    return htmlElement(content);
+
+
+function rect(parameters) {
+    const content = `<div style="position:absolute"></div>`;
+    return htmlElement(content, parameters);
 }
 
 function circle(info) {
@@ -144,7 +201,7 @@ function circle(info) {
         info.stroke = "black";
 
 
-    _set(newCircle, info);
+    _setParameters(newCircle, info);
 
     exec(() => {
         _svgAppend(newCircle);
@@ -190,13 +247,13 @@ function _svgAppend(obj) {
 }
 
 
-function line(info) {
+function line(parameters) {
     var newLine = document.createElementNS('http://www.w3.org/2000/svg', 'line');
 
-    if (info.stroke == undefined)
-        info.stroke = "black";
+    if (parameters.stroke == undefined)
+        parameters.stroke = "black";
 
-    _set(newLine, info);
+    _setParameters(newLine, parameters);
 
     exec(() => {
         _svgAppend(newLine);
@@ -204,8 +261,12 @@ function line(info) {
     return newLine;
 
 }
+
+
 function exec(f) {
-    animation.addAction(t, t, f);
+    if(typeof(_currentTime) != "number")
+        console.error("a")
+    animation.addAction(_currentTime, _currentTime, f);
 }
 
 
@@ -213,72 +274,107 @@ function cls() {
     exec(() => { container.innerHTML = ""; svg.innerHTML = "" });
 }
 
-function _set(obj, info) {
-    if (info == undefined)
-        return;
 
-    if (info.x)
-        obj.style.left = info.x + "px";
-    if (info.y)
-        obj.style.top = info.y + "px";
-    if (info.dx)
-        obj.style.left = (parseInt(obj.style.left) + info.dx) + "px";
-    if (info.dy)
-        obj.style.top = (parseInt(obj.style.top) + info.dy) + "px";
 
-    if (info.w)
-        obj.style.width = info.w + "px";
-    if (info.h)
-        obj.style.height = info.h + "px";
-    if (info.fillcolor)
-        obj.style.background = info.fillcolor;
-    if (info.border)
-        obj.style.border = info.border;
-    if (info.opacity)
-        obj.style.opacity = info.opacity;
-    if (info.zindex)
-        obj.style.zIndex = info.zindex;
 
-    if (info.x1)
-        obj.setAttribute('x1', info.x1);
-    if (info.y1)
-        obj.setAttribute('y1', info.y1);
-    if (info.x2)
-        obj.setAttribute('x2', info.x2);
-    if (info.y2)
-        obj.setAttribute('y2', info.y2);
-    if (info.cx)
-        obj.setAttribute('cx', info.cx);
-    if (info.cy)
-        obj.setAttribute('cy', info.cy);
-    if (info.rx)
-        obj.setAttribute('rx', info.rx);
-    if (info.ry)
-        obj.setAttribute('rx', info.ry);
-    if (info.r)
-        obj.setAttribute('r', info.r);
-    if (info.fill)
-        obj.setAttribute('fill', info.fill);
-    obj.setAttribute("stroke", info.stroke || info.color);
-    obj.setAttribute("stroke-width", info.linewidth);
-    obj.setAttribute("stroke-dasharray", info.strokeDasharray);
+
+let defaultParameters = {};
+
+let exampleParameters = { x: 0, y: 0, w: 32, h: 32, color: "black", stroke: "black", fill: "white", fillColor: "white", duration: 200 };
+
+function sameButFirstLetterUpperCase(name) {
+    return name[0].toUpperCase() + name.substring(1);
+}
+
+/**
+ * install the setter for the default parameters
+ */
+for (let parameterName in exampleParameters) {
+    eval(`function set${sameButFirstLetterUpperCase(parameterName)}(value) {defaultParameters.${parameterName} = value;}`)
 }
 
 
-function mv(obj, info) {
-    if (info.duration == undefined)
-        info.duration = 0;
-    if (info.dur == undefined)
-        info.dur = info.duration;
+
+function _setParameters(obj, parameters) {
+    if (parameters == undefined)
+        parameters = defaultParameters;
+
+    for (const name in defaultParameters)
+        if (parameters[name] == undefined)
+            parameters[name] = defaultParameters[name];
+
+    if (parameters.x)
+        obj.style.left = parameters.x + "px";
+    if (parameters.y)
+        obj.style.top = parameters.y + "px";
+    if (parameters.dx)
+        obj.style.left = (parseInt(obj.style.left) + parameters.dx) + "px";
+    if (parameters.dy)
+        obj.style.top = (parseInt(obj.style.top) + parameters.dy) + "px";
+
+    if (parameters.w)
+        obj.style.width = parameters.w + "px";
+    if (parameters.h)
+        obj.style.height = parameters.h + "px";
+    if (parameters.fill)
+        obj.style.background = parameters.fill;
+    if (parameters.fillcolor)
+        obj.style.background = parameters.fillcolor;
+    if (parameters.border)
+        obj.style.border = parameters.border;
+    if (parameters.opacity)
+        obj.style.opacity = parameters.opacity;
+    if (parameters.zindex)
+        obj.style.zIndex = parameters.zindex;
+
+    if (parameters.x1)
+        obj.setAttribute('x1', parameters.x1);
+    if (parameters.y1)
+        obj.setAttribute('y1', parameters.y1);
+    if (parameters.x2)
+        obj.setAttribute('x2', parameters.x2);
+    if (parameters.y2)
+        obj.setAttribute('y2', parameters.y2);
+    if (parameters.cx)
+        obj.setAttribute('cx', parameters.cx);
+    if (parameters.cy)
+        obj.setAttribute('cy', parameters.cy);
+    if (parameters.rx)
+        obj.setAttribute('rx', parameters.rx);
+    if (parameters.ry)
+        obj.setAttribute('rx', parameters.ry);
+    if (parameters.r)
+        obj.setAttribute('r', parameters.r);
+    if (parameters.fill)
+        obj.setAttribute('fill', parameters.fill);
+    obj.setAttribute("stroke", parameters.stroke || parameters.color);
+    obj.setAttribute("stroke-width", parameters.linewidth);
+    obj.setAttribute("stroke-dasharray", parameters.strokeDasharray);
+}
+
+
+function mv(obj, parameters) {
+    if (obj instanceof Array) {
+        obj.map((el) => mv(el, parameters));
+        return;
+    }
+    if (parameters == undefined)
+        parameters = {};
+    if (parameters.duration == undefined)
+        parameters.duration = defaultParameters.duration;
+    if (parameters.duration == undefined)
+        parameters.duration = 0;
+    if (parameters.dur == undefined)
+        parameters.dur = parameters.duration;
     exec(() => {
-        obj.style.transition = `all ${info.dur}ms`;
-        _set(obj, info);
+        obj.style.transition = `all ${parameters.dur}ms`;
+        _setParameters(obj, parameters);
     })
 }
 
 
-function wait(duration) {
-    t += duration;
+function wait(duration) {_currentTime +=
+    _currentTime += duration;
 }
 
 document.getElementById("buttonPlayStop").onclick = () => {
@@ -298,5 +394,3 @@ document.getElementById("buttonPlayStop").onclick = () => {
     else
         animation.stop();
 }
-    ;
-
