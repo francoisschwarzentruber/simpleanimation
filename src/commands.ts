@@ -1,196 +1,67 @@
-/**
- * wrapper of ACE editor
- */
-class EditorACE {
-
-    constructor() {
-        this.editor = ace.edit("editor");
-        this.editor.setTheme("ace/theme/monokai");
-        this.editor.session.setMode("ace/mode/javascript");
-        this.editor.getSession().on('change', function () {
-            localStorage.setItem("code", this.editor.getValue());
-        });
-    }
+import { animation } from './animation.ts';
+import { editor } from './editor.ts'
+import hljs from "highlight.js";
 
 
-    setValue(txt) {
-        this.editor.setValue(txt);
-    }
-
-    getValue() {
-        return this.editor.getValue();
-    }
-}
+const container = document.getElementById("container");
+const svg = document.getElementById("svg");
+const inputStep = document.getElementById("inputStep") as any;
 
 
-/**
- * wrapper of a naïve textarea editor
- */
-class EditorText {
-
-    constructor() {
-        this.editor = document.createElement("textarea");
-        document.getElementById("editor").append(this.editor);
-        this.editor.setAttribute("rows", "30");
-        this.editor.setAttribute("cols", "50");
-        this.editor.oninput = (
-            () => {
-                localStorage.setItem("code", this.editor.value);
-            });
-    }
-
-
-    setValue(txt) {
-        this.editor.value = (txt);
-    }
-
-    getValue() {
-        return this.editor.value;
-    }
-}
-
-
-/** logic */
-editor = new EditorText();
-editor.setValue(localStorage.getItem("code"));
-inputStep.oninput = () => { animation.stop(); load(); animation.gotoTime(inputStep.value) };
-
-
-
-class Animation {
-    stopped = true;
-    actions = [];
-    t = 0;
-    i = 0;
-
-    /**
-     * 
-     * @param {*} startTime 
-     * @param {*} endTime 
-     * @param {*} f function to be executed as an action
-     */
-    addAction(startTime, endTime, f) {
-        this.actions.push({ startTime, endTime, f });
-    }
-
-    /**
-     * 
-     * @param {*} newt
-     * @description show the picture at time newt 
-     */
-    gotoTime(newt) {
-        this.i = 0;
-        this.t = 0;
-        container.innerHTML = "";
-        this._forwardTo(newt);
-    }
-
-
-    _forwardTo(newt) {
-        inputStep.value = newt;
-
-        while (this.i < animation.actions.length && animation.actions[this.i].startTime <= newt) {
-            animation.actions[this.i].f();
-            this.i++;
-        }
-
-        this.t = newt;
-
-        if (this.i >= animation.actions.length) {
-            this.stopped = true;
-            return;
-        }
-
-    }
-
-
-    /**
-     * play the animation from the current time
-     */
-    play() {
-        this.stopped = false;
-        const beginning = Date.now() - this.t;
-        console.log("play")
-        let loop = () => {
-            if (this.stopped)
-                return;
-
-            const t = Date.now() - beginning;
-
-            this._forwardTo(t);
-
-            if (!this.stopped)
-                requestAnimationFrame(loop);
-        }
-        loop();
-    }
-
-    /**
-     * @description stop the animation
-     */
-    stop() { this.stopped = true; }
-
-
-    get totalDuration() { return Math.max(...this.actions.map((a) => a.endTime)); }
-}
-
-
-let animation = new Animation();
 let _currentTime = 0;
 
-function load() {
+export function load() {
     _currentTime = 0;
-    animation = new Animation();
+    animation.clear();
     eval(editor.getValue());
     inputStep.max = animation.totalDuration;
     console.log("total duration: " + animation.totalDuration);
 }
 
 
-const container = document.getElementById("container");
-const svg = document.getElementById("svg");
-
 function cls() {
-    animation.addAction(_currentTime, _currentTime, () => container.innerHTML = "");
+    exec(() => { (container as any).innerHTML = ""; (svg as any).innerHTML = "" });
 }
 
-function htmlElement(htmlCode, parameters) {
+
+function htmlElement(htmlCode: string, parameters: any) {
     const wrapper = document.createElement('div');
     wrapper.innerHTML = htmlCode;
-    const element = wrapper.firstChild;
+    const element: any = wrapper.firstChild;
     element.style.position = "absolute";
     _setParameters(element, parameters);
 
     exec(() => {
-        container.append(element);
+        (container as any).append(element);
     });
     return element;
 }
 
 
 
-function openmoji(emoticonCode, parameters) {
+function openmoji(emoticonCode: string, parameters: any) {
     return htmlElement(`<img src="https://openmoji.org/data/color/svg/${emoticonCode}.svg"/>`, parameters)
 }
 
-function latex(latexCode, parameters) {
+function latex(latexCode: string, parameters: any) {
     const element = document.createElement("div");
     element.innerText = `\\[${latexCode}\\]`;
     _setParameters(element, parameters);
 
     exec(() => {
-        container.append(element);
-        MathJax.typeset();
+        (container as any).append(element);
+        // @ts-ignore
+        (MathJax as any).typeset();
     });
     return element;
 }
 
-function text(str, parameters) {
+function text(str: string, parameters: any) {
     const element = document.createElement("div");
     element.innerText = str;
     _setParameters(element, parameters);
     exec(() => {
-        container.append(element);
+        (container as any).append(element);
     });
     return element;
 }
@@ -198,35 +69,36 @@ function text(str, parameters) {
 /**
  * <pre><code class="language-html">...</code></pre>
  */
-function code(codeStr, parameters) {
+function code(codeStr: string, parameters: any) {
     const element = document.createElement("pre");
     const codeElement = document.createElement("code");
-    if (parameters.language)
-        codeElement.classList.add("language-" + parameters.language);
+    if (parameters)
+        if (parameters.language)
+            codeElement.classList.add("language-" + parameters.language);
     element.style.position = "absolute";
     element.appendChild(codeElement);
     codeElement.textContent = codeStr;
     _setParameters(element, parameters);
     exec(() => {
-        container.append(element);
+        (container as any).append(element);
         hljs.highlightAll();
     });
     return element;
 }
 
-function del(obj) {
+function del(obj: any) {
     exec(() => {
         obj.remove();
     });
 }
 
 
-function rect(parameters) {
+function rect(parameters: any) {
     const content = `<div style="position:absolute"></div>`;
     return htmlElement(content, parameters);
 }
 
-function circle(parameters) {
+function circle(parameters: any) {
     var newCircle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
 
     _setParameters(newCircle, parameters);
@@ -237,7 +109,7 @@ function circle(parameters) {
     return newCircle;
 }
 
-function svgElement(content) {
+function svgElement(content: string) {
     const wrapper = document.createElement('svg');
     wrapper.innerHTML = content;
     const element = wrapper.firstChild;
@@ -248,34 +120,25 @@ function svgElement(content) {
 }
 
 
-function _svgAppend(obj) {
+function _svgAppend(obj: any) {
     if (obj.style.zIndex == "") {
-        svg.appendChild(obj);
+        (svg as any).appendChild(obj);
         return;
     }
 
     const z = parseInt(obj.style.zIndex);
 
     if (z <= 0)
-        svg.prepend(obj);
+        (svg as any).prepend(obj);
     else
-        svg.appendChild(obj);
+        (svg as any).appendChild(obj);
     return;
-    for (const o of svg.children) {
-        if (z <= parseInt(o.style.zIndex)) {
-            console.log(z)
-            console.log(parseInt(o.style.zIndex))
-            svg.insertBefore(obj, o);
-            return;
-        }
-    }
 
-    svg.appendChild(obj);
 
 }
 
 
-function line(parameters) {
+function line(parameters: any) {
     var newLine = document.createElementNS('http://www.w3.org/2000/svg', 'line');
 
     _setParameters(newLine, parameters);
@@ -288,16 +151,12 @@ function line(parameters) {
 }
 
 
-function exec(f) {
+function exec(f: () => void) {
     if (typeof (_currentTime) != "number")
         console.error("a")
     animation.addAction(_currentTime, _currentTime, f);
 }
 
-
-function cls() {
-    exec(() => { container.innerHTML = ""; svg.innerHTML = "" });
-}
 
 
 
@@ -305,7 +164,7 @@ function cls() {
 
 let defaultParameters = { x: 0, y: 0, w: 32, h: 32, color: "black", stroke: "black", fill: "white", fillColor: "white", duration: 200 };
 
-function sameButFirstLetterUpperCase(name) {
+function sameButFirstLetterUpperCase(name: string) {
     return name[0].toUpperCase() + name.substring(1);
 }
 
@@ -318,14 +177,14 @@ for (let parameterName in defaultParameters) {
 
 
 
-function _setParameters(obj, parameters) {
+function _setParameters(obj: any, parameters: any) {
     if (parameters == undefined)
         parameters = {};
 
     if (parameters.dur == undefined)
         for (const name in defaultParameters)
             if (parameters[name] == undefined)
-                parameters[name] = defaultParameters[name];
+                parameters[name] = (defaultParameters as any)[name];
 
     if (parameters.x)
         obj.style.left = parameters.x + "px";
@@ -381,7 +240,7 @@ function _setParameters(obj, parameters) {
 }
 
 
-function mv(obj, parameters) {
+function mv(obj: any, parameters: any) {
     if (obj instanceof Array) {
         obj.map((el) => mv(el, parameters));
         return;
@@ -401,29 +260,12 @@ function mv(obj, parameters) {
 }
 
 
-function wait(duration) {
+function wait(duration: number) {
     if (duration == undefined)
         duration = defaultParameters.duration;
     _currentTime += duration;
 }
 
-document.getElementById("buttonPlayStop").onclick = () => {
-    if (animation.stopped) {
-        container.innerHTML = "";
-        let t = 0;
-        if (animation)
-            t = animation.t;
-
-        load();
-
-        if (t >= animation.totalDuration)
-            t = 0;
-        animation.gotoTime(t);
-        animation.play();
-    }
-    else
-        animation.stop();
-}
 
 
 
@@ -431,10 +273,10 @@ document.getElementById("buttonPlayStop").onclick = () => {
 
 
 
-
+// @ts-ignore
 const converter = new showdown.Converter();
 
-function markdown(mdCode, parameters) {
+function markdown(mdCode: string, parameters: any) {
     const htmlCode = converter.makeHtml(mdCode);
     return htmlElement(htmlCode, parameters);
 }
@@ -443,29 +285,66 @@ function markdown(mdCode, parameters) {
 
 
 
-function performMorph(element, element2) {
-    if(element.getHTML() == element2.getHTML())
-        return;
 
-    let i = 0;
-    let i2 = 0;
-    while(i < element.children.length && j < element.children.length) {
-        if (element.children[i].getHTML() == element2.children[i2].getHTML()) {
-            i++;
-            j++;
-        }
-        
-    }
-}
-/**
- * 
- * @param {*} element 
- * @param {*} element2 
- * @effect starts a modification of element into element2
- */
-function morph(element, element2, parameters) {
-    exec(() => {
-        element2.remove();
+
+
+
+
+function performMorph(el: HTMLElement, el2: HTMLElement) {
+    md(el, el2, {
+        getNodeKey: function (node: any) {
+            return node.id;
+        },
+        /*addChild: function (parentNode, childNode) {
+            parentNode.appendChild(childNode);
+        },
+        onBeforeNodeAdded: function (node) {
+            return node;
+        },
+        onNodeAdded: function (node: any) {
+
+        },
+        onBeforeElUpdated: function (fromEl: HTMLElement, toEl: HTMLElement) {
+            return true;
+        },
+        onElUpdated: function (el) {
+
+        },
+        onBeforeNodeDiscarded: function (node) {
+            return true;
+        },
+        onNodeDiscarded: function (node) {
+
+        },
+        onBeforeElChildrenUpdated: function (fromEl, toEl) {
+            return true;
+        },
+        childrenOnly: false,*/
+        /* skipFromChildren: function (fromEl, toEl) {
+             return false;
+         }*/
     });
-
 }
+
+function morph(el: HTMLElement, el2: HTMLElement) {
+    exec(() => {
+        el2.remove();
+        performMorph(el, el2)
+    });
+}
+
+
+(window as any).cls = cls;
+(window as any).latex = latex;
+(window as any).wait = wait;
+(window as any).mv = mv;
+(window as any).openmoji = openmoji;
+(window as any).text = text;
+(window as any).code = code;
+(window as any).del = del;
+(window as any).rect = rect;
+(window as any).line = line;
+(window as any).circle = circle;
+(window as any).svgElement = svgElement;
+(window as any).markdown = markdown;
+(window as any).morph = morph;
