@@ -1,62 +1,13 @@
-<html lang="fr">
-
-<head>
-
-    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
-    <script src=" https://cdn.jsdelivr.net/npm/ace-builds@1.32.7/src-min-noconflict/ace.js "></script>
-    <script src=" https://cdn.jsdelivr.net/npm/ace-builds@1.32.7/src-min-noconflict/theme-chrome.min.js "></script>
-    <link href=" https://cdn.jsdelivr.net/npm/ace-builds@1.32.7/css/ace.min.css " rel="stylesheet">
-    <meta charset="UTF-8">
-
-    <style>
-        #editor {
-            height: 100%;
-            width: 50%;
-            display: inline-block;
-        }
-
-        #wrapper {
-            display: inline-block;
-            vertical-align: top;
-            position: relative;
-            margin: 20px;
-        }
-
-        #container,
-        #svg {
-            position: absolute;
-
-        }
-
-        #right {
-            vertical-align: top;
-            display: inline-block;
-        }
-
-        #container div {
-            position: absolute;
-        }
-    </style>
-</head>
-
-<body>
-
-    <div id="editor">
-
-    </div>
-    <div id="right">
-        <div id="toolbar"><button id="buttonPlayStop">▶/⏸</button>
-            <input type="range" id="inputStep" name="step" min="0" max="11" />
-        </div>
-
-        <div id="wrapper">
-            <div id="container"> </div>
-            <svg xmlns="http://www.w3.org/2000/svg" width="640" height="480" id="svg"></svg>
-        </div>
-    </div>
-</body>
-
-<script src="simpleanimation.js"></script>
-
-
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>simpleanimation</title>
+  </head>
+  <body>
+    <div id="app"></div>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
 </html>

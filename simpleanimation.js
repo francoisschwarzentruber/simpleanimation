@@ -175,7 +175,7 @@ function openmoji(emoticonCode, parameters) {
 
 function latex(latexCode, parameters) {
     const element = document.createElement("div");
-    element.innerText = "\\[${latexCode}\\]";
+    element.innerText = `\\[${latexCode}\\]`;
     _setParameters(element, parameters);
 
     exec(() => {
@@ -191,6 +191,25 @@ function text(str, parameters) {
     _setParameters(element, parameters);
     exec(() => {
         container.append(element);
+    });
+    return element;
+}
+
+/**
+ * <pre><code class="language-html">...</code></pre>
+ */
+function code(codeStr, parameters) {
+    const element = document.createElement("pre");
+    const codeElement = document.createElement("code");
+    if (parameters.language)
+        codeElement.classList.add("language-" + parameters.language);
+    element.style.position = "absolute";
+    element.appendChild(codeElement);
+    codeElement.textContent = codeStr;
+    _setParameters(element, parameters);
+    exec(() => {
+        container.append(element);
+        hljs.highlightAll();
     });
     return element;
 }
@@ -319,8 +338,12 @@ function _setParameters(obj, parameters) {
 
     if (parameters.w)
         obj.style.width = parameters.w + "px";
+    if (parameters.width)
+        obj.style.width = parameters.width + "px";
     if (parameters.h)
         obj.style.height = parameters.h + "px";
+    if (parameters.height)
+        obj.style.height = parameters.height + "px";
     if (parameters.fill)
         obj.style.background = parameters.fill;
     if (parameters.fillcolor)
@@ -400,4 +423,49 @@ document.getElementById("buttonPlayStop").onclick = () => {
     }
     else
         animation.stop();
+}
+
+
+
+
+
+
+
+
+const converter = new showdown.Converter();
+
+function markdown(mdCode, parameters) {
+    const htmlCode = converter.makeHtml(mdCode);
+    return htmlElement(htmlCode, parameters);
+}
+
+
+
+
+
+function performMorph(element, element2) {
+    if(element.getHTML() == element2.getHTML())
+        return;
+
+    let i = 0;
+    let i2 = 0;
+    while(i < element.children.length && j < element.children.length) {
+        if (element.children[i].getHTML() == element2.children[i2].getHTML()) {
+            i++;
+            j++;
+        }
+        
+    }
+}
+/**
+ * 
+ * @param {*} element 
+ * @param {*} element2 
+ * @effect starts a modification of element into element2
+ */
+function morph(element, element2, parameters) {
+    exec(() => {
+        element2.remove();
+    });
+
 }
