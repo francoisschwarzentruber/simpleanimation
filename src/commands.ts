@@ -234,9 +234,15 @@ function _setParameters(obj: any, parameters: any) {
         obj.setAttribute('r', parameters.r);
     if (parameters.fill)
         obj.setAttribute('fill', parameters.fill);
-    obj.setAttribute("stroke", parameters.stroke || parameters.color);
-    obj.setAttribute("stroke-width", parameters.linewidth);
-    obj.setAttribute("stroke-dasharray", parameters.strokeDasharray);
+
+    if (parameters.stroke || parameters.color)
+        obj.setAttribute("stroke", parameters.stroke || parameters.color);
+
+    if (parameters.linewidth)
+        obj.setAttribute("stroke-width", parameters.linewidth);
+
+    if (parameters.strokeDasharray)
+        obj.setAttribute("stroke-dasharray", parameters.strokeDasharray);
 }
 
 
@@ -286,51 +292,95 @@ function markdown(mdCode: string, parameters: any) {
 
 
 
+function lev(s: string, t: string) {
+    let D = Array(s.length + 1);
+    for (let i = 0; i <= s.length; i++)
+        D[i] = Array(t.length + 1);
+
+    for (let i = 0; i <= s.length; i++)
+        D[i][0] = i;
+
+    for (let j = 0; j <= t.length; j++)
+        D[0][j] = j;
 
 
+    for (let i = 1; i <= s.length; i++)
+        for (let j = 1; j <= t.length; j++) {
+            const cost = (s[i] == t[j]) ? 0 : 1;
+            D[i][j] = Math.min(D[i - 1][j] + 1, D[i][j - 1] + 1, D[i - 1][j - 1] + cost);
+        }
 
-
-function performMorph(el: HTMLElement, el2: HTMLElement) {
-    md(el, el2, {
-        getNodeKey: function (node: any) {
-            return node.id;
-        },
-        /*addChild: function (parentNode, childNode) {
-            parentNode.appendChild(childNode);
-        },
-        onBeforeNodeAdded: function (node) {
-            return node;
-        },
-        onNodeAdded: function (node: any) {
-
-        },
-        onBeforeElUpdated: function (fromEl: HTMLElement, toEl: HTMLElement) {
-            return true;
-        },
-        onElUpdated: function (el) {
-
-        },
-        onBeforeNodeDiscarded: function (node) {
-            return true;
-        },
-        onNodeDiscarded: function (node) {
-
-        },
-        onBeforeElChildrenUpdated: function (fromEl, toEl) {
-            return true;
-        },
-        childrenOnly: false,*/
-        /* skipFromChildren: function (fromEl, toEl) {
-             return false;
-         }*/
-    });
+    console.log(D[s.length][t.length])
+    return D;
 }
 
+
+
+
+function sequenceTransformation(s: string, t: string) {
+    const D = lev(s, t);
+    const operations: any = [];
+    let i = s.length;
+    let j = t.length;
+    let position = j;
+    while (D[i][j] > 0) {
+        if (D[i][j] == D[i - 1][j] + 1) {
+            operations.unshift({ type: "delete", position })
+            i--;
+            position--;
+        }
+        else if (D[i][j] == D[i][j - 1] + 1) {
+            operations.unshift({ type: "add", position, letter: t[j] })
+            j--;
+            position++;
+        }
+        else if (D[i][j] == D[i - 1][j - 1]) {
+            i--;
+            j--;
+            position--;
+        }
+        else if (D[i][j] == D[i - 1][j - 1] + 1) {
+            operations.unshift({ type: "replace", position, letter: t[j] });
+            i--;
+            j--;
+            position--;
+        }
+    }
+    return operations;
+}
+
+
+
+
+
+
 function morph(el: HTMLElement, el2: HTMLElement) {
-    exec(() => {
-        el2.remove();
-        performMorph(el, el2)
-    });
+    const s = el.innerHTML;
+    const t = el2.innerHTML;
+    const operations = sequenceTransformation(s, t);
+    exec(() => { el2.remove(); });
+    console.log(operations)
+    let sCurrent = s;
+    for (const op of operations) {
+
+        if (op.type == "remove")
+            sCurrent = sCurrent.substring(0, op.position) + sCurrent.substring(op.position + 1);
+        else if (op.type == "add")
+            sCurrent = sCurrent.substring(0, op.position + 1) + op.letter + sCurrent.substring(op.position + 1);
+        else if (op.type == "replace") {
+            sCurrent = sCurrent.substring(0, op.position) + op.letter + sCurrent.substring(op.position + 1);
+        }
+        const current = sCurrent;
+        exec(() => {
+            el.innerHTML = current;
+            // @ts-ignore
+            //(MathJax as any).typeset();
+        }
+        );
+
+        wait(100);
+    }
+
 }
 
 

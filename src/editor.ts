@@ -1,5 +1,4 @@
 import {animation} from './animation.ts';
-import {load} from './commands.ts'
 
 
 /**
@@ -36,5 +35,5 @@ export const editor = new EditorText();
 editor.setValue(localStorage.getItem("code") as string);
 
 const inputStep = document.getElementById("inputStep") as any;
-inputStep.oninput = () => { animation.stop(); load(); animation.gotoTime(inputStep.value) };
+inputStep.oninput = () => { animation.stop(); animation.gotoTime(inputStep.value) };
 
