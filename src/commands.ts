@@ -306,11 +306,10 @@ function lev(s: string, t: string) {
 
     for (let i = 1; i <= s.length; i++)
         for (let j = 1; j <= t.length; j++) {
-            const cost = (s[i] == t[j]) ? 0 : 1;
+            const cost = (s[i - 1] == t[j - 1]) ? 0 : 1;
             D[i][j] = Math.min(D[i - 1][j] + 1, D[i][j - 1] + 1, D[i - 1][j - 1] + cost);
         }
 
-    console.log(D[s.length][t.length])
     return D;
 }
 
@@ -322,59 +321,67 @@ function sequenceTransformation(s: string, t: string) {
     const operations: any = [];
     let i = s.length;
     let j = t.length;
-    let position = j;
-    while (D[i][j] > 0) {
+    while (i > 0 || j > 0) {
         if (D[i][j] == D[i - 1][j] + 1) {
-            operations.unshift({ type: "delete", position })
+            operations.push({ type: "delete" });
             i--;
-            position--;
         }
         else if (D[i][j] == D[i][j - 1] + 1) {
-            operations.unshift({ type: "add", position, letter: t[j] })
+            operations.push({ type: "add", letter: t[j - 1] })
             j--;
-            position++;
         }
         else if (D[i][j] == D[i - 1][j - 1]) {
+            operations.push({ type: "match", letter: t[j - 1] });
             i--;
             j--;
-            position--;
         }
         else if (D[i][j] == D[i - 1][j - 1] + 1) {
-            operations.unshift({ type: "replace", position, letter: t[j] });
+            operations.push({ type: "replace", letter: t[j - 1] });
             i--;
             j--;
-            position--;
         }
     }
+    operations.reverse();
+    console.log(operations)
     return operations;
 }
 
 
 
-
+function sequenceOfStrings(s: string, t: string) {
+    const operations = sequenceTransformation(s, t);
+    let strings = [];
+    let sCurrent = s;
+    let position = 0;
+    for (const op of operations) {
+        if (op.type != "match") {
+            if (op.type == "delete") {
+                sCurrent = sCurrent.substring(0, position) + sCurrent.substring(position + 1);
+                position--;
+            }
+            else if (op.type == "add")
+                sCurrent = sCurrent.substring(0, position) + op.letter + sCurrent.substring(position);
+            else if (op.type == "replace") {
+                sCurrent = sCurrent.substring(0, position) + op.letter + sCurrent.substring(position + 1);
+            }
+            strings.push(sCurrent);
+        }
+        position++;
+    }
+    return strings;
+}
 
 
 function morph(el: HTMLElement, el2: HTMLElement) {
     const s = el.innerHTML;
     const t = el2.innerHTML;
-    const operations = sequenceTransformation(s, t);
+    const strings = sequenceOfStrings(s, t);
     exec(() => { el2.remove(); });
-    console.log(operations)
-    let sCurrent = s;
-    for (const op of operations) {
-
-        if (op.type == "remove")
-            sCurrent = sCurrent.substring(0, op.position) + sCurrent.substring(op.position + 1);
-        else if (op.type == "add")
-            sCurrent = sCurrent.substring(0, op.position + 1) + op.letter + sCurrent.substring(op.position + 1);
-        else if (op.type == "replace") {
-            sCurrent = sCurrent.substring(0, op.position) + op.letter + sCurrent.substring(op.position + 1);
-        }
-        const current = sCurrent;
+    for (const str of strings) {
         exec(() => {
-            el.innerHTML = current;
+            el.innerHTML = str;
             // @ts-ignore
-            //(MathJax as any).typeset();
+            MathJax.typeset();
         }
         );
 
@@ -382,6 +389,10 @@ function morph(el: HTMLElement, el2: HTMLElement) {
     }
 
 }
+
+
+
+
 
 
 (window as any).cls = cls;
@@ -398,3 +409,5 @@ function morph(el: HTMLElement, el2: HTMLElement) {
 (window as any).svgElement = svgElement;
 (window as any).markdown = markdown;
 (window as any).morph = morph;
+(window as any).sequenceTransformation = sequenceTransformation;
+(window as any).sequenceOfStrings = sequenceOfStrings;
